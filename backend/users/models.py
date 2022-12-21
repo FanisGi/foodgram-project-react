@@ -28,7 +28,7 @@ class Users(AbstractUser):
 
     class Meta:
         ordering = ['username']
-        verbose_name = 'Пользователь'
+        verbose_name = 'пользователь'
         verbose_name_plural = 'Пользователи'
 
     def __str__(self):
