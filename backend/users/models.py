@@ -4,6 +4,9 @@ from django.db import models
 
 class Users(AbstractUser):
 
+    
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'username']
+
     USER = 'user'
     ADMIN = 'admin'
     ROLES = [
@@ -11,12 +14,11 @@ class Users(AbstractUser):
         (ADMIN, ADMIN),
     ]
 
-    #  blank = True - поле будет необязательным к заполнению.
-    #  null = True - то в ячейке таблицы БД значение поля будет равно nul
-    email = models.EmailField(max_length=80, unique=True, blank=False)
+    email = models.EmailField(max_length=254, unique=True, blank=False)
     bio = models.TextField(blank=True)
     role = models.CharField(max_length=20, choices=ROLES, default=USER)
     confirmation_code = models.CharField(max_length=255, blank=True, null=True)
+    USERNAME_FIELD = 'email'
 
     @property
     def is_admin(self):

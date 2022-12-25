@@ -35,8 +35,8 @@ class Tags(models.Model):
         validators=[
             RegexValidator(
                 regex='^[-a-zA-Z0-9_]+$',
-                message=(f'slug введен неверно. Может состоять из латинских букв, цифр, '
-                f'и спецсимвола _')
+                message=(f'slug введен неверно. Может состоять из латинских '
+                f'букв, цифр и спецсимвола _')
             )
         ]
     )
