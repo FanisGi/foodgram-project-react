@@ -9,7 +9,6 @@ from rest_framework import serializers
 from recipes.models import (
     Tags, Recipes, IngredientInRecipe, Ingredients, Subscriptions
 )
-# from .validators import is_correct_email, is_correct_username
 
 User = get_user_model()
 
@@ -55,7 +54,9 @@ class IngredientsSerializer(serializers.ModelSerializer):
 class RecipesSerializer(serializers.ModelSerializer):
     """Сериализатор рецептов."""
     author = serializers.SlugRelatedField(
-        slug_field='username', read_only=True, default=serializers.CurrentUserDefault()
+        slug_field='username',
+        read_only=True,
+        default=serializers.CurrentUserDefault(),
     )
     tags = TagsSerializer()
     # ingredients = serializers.SlugRelatedField(
@@ -65,3 +66,48 @@ class RecipesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipes
         fields = '__all__'
+
+
+class RecipeMinifiedSeriakizer(serializers.ModelSerializer):
+    """
+    Краткий вариант сериализатора c рецептами. 
+    Состоит из id, name, image, cooking_time.
+    """
+
+    class Meta:
+        model = Recipes
+        fields = ('id', 'name', 'image', 'cooking_time',) 
+
+
+class SubscriptionsSerializer(CustomUserSerializer):
+    """Сериализатор подписок."""
+
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    def get_recipes(self, request):
+        """
+        Функция выдаёт список рецептов автора, 
+        на которого подписан пользователь. 
+        В каждом списке хранится id, name, image, cooking_time.
+        """
+
+        recipes_data = Recipes.objects.filter(
+            author=request.id
+        )
+        serializer = RecipeMinifiedSeriakizer(
+            data=recipes_data, 
+            many=True
+        )
+        serializer.is_valid()
+        return serializer.data
+    
+    def get_recipes_count(self, request):
+        """Количество рецептов у избранного автора."""
+
+        return request.recipes.count()
+    
+    class Meta(CustomUserSerializer.Meta):
+        fields = (
+            CustomUserSerializer.Meta.fields + ('recipes', 'recipes_count',)
+        )
