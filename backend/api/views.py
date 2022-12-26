@@ -27,34 +27,7 @@ User = get_user_model()
 class CustomUsersViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
-    permission_classes=(AllowAny,)
-
-    # if request.method == 'GET':
-    #     snippets = Snippet.objects.all()
-    #     serializer = SnippetSerializer(snippets, many=True)
-    #     return Response(serializer.data)
-
-    # elif request.method == 'POST':
-    #     serializer = SnippetSerializer(data=request.data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-    # @action(
-    #     detail=False,
-    #     url_path='me',
-    #     permission_classes=(IsAuthenticated,)
-    #     # serializer_class=RoleSerializer
-    # )
-    # def self_user(self, request):
-    #     print(request.user)
-    #     user = get_object_or_404(User, pk=request.user.id)
-    #     serializer = self.get_serializer(user, data=request.data, partial=True)
-    #     serializer.is_valid(raise_exception=True)
-    #     serializer.save()
-    #     return Response(request.data, status=status.HTTP_200_OK)
+    permission_classes=(IsAuthenticated,)
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):

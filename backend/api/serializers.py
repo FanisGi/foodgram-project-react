@@ -24,23 +24,17 @@ class CustomUserSerializer(UserSerializer):
         model = User
         fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed')
 
-    def get_is_subscribed(self, obj):
+    def get_is_subscribed(self, request):
         """Подписан ли текущий пользователь на запрашимаего пользователя."""
-        if Subscriptions.objects.filter(user=self.username):
-            return 'true'
 
-    def create(self, validated_data):
-        user = User.objects.create(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            password=validated_data['password']
-        )
+        if Subscriptions.objects.filter(
+            author_id=request.id,
+            user=self.context.get('request').user
+        ).exists():
+            return True
 
-        user.save()
+        return False
 
-        return user
 
 class TagsSerializer(serializers.ModelSerializer):
     """Сериализатор Tags."""

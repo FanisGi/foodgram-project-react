@@ -1,11 +1,13 @@
 import os
 
-from datetime import timedelta
+from dotenv import load_dotenv
+
+load_dotenv('../infra/.env')
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-SECRET_KEY = '^e&d+2drlanlltrt6!##-sr1^8@u6v@^v*nw(f@yxe=u)2$gcy'
+SECRET_KEY = os.getenv(key='SECRET_KEY')
 
 DEBUG = True
 
@@ -41,35 +43,27 @@ REST_FRAMEWORK = {
 
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
 
-    'PAGE_SIZE': 2,
+    'PAGE_SIZE': 3,
 
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning'
 }
 
-# DJOSER = {
-#     'SERIALIZERS': {
-#         # 'user_create': 'djoser.serializers.UserCreateSerializer',
-#         'user': 'api.serializers.CustomUserSerializer',
-#         'current_user': 'api.serializers.CustomUserSerializer',
-#     },
-#     # 'ACTIVATION_URL': 'localhost:8000/api/auth/users/activation/',
+DJOSER = {
+    'SERIALIZERS': {
+        'user': 'api.serializers.CustomUserSerializer',
+    },
+    # 'PERMISSIONS': {
+    #     'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
+    #     'user_list': ['rest_framework.permissions.IsAuthenticatedOrReadOnly'],
+    # },
+    'HIDE_USERS': False,
+}
 
-#     # 'PERMISSIONS': {
-#     #     'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
-#     #     'user_list': ['rest_framework.permissions.IsAuthenticatedOrReadOnly'],
-#     # },
-#     # 'PERMISSIONS': {
-#     #     'user': ['rest_framework.permissions.AllowAny'],
-#     #     'user_list': ['rest_framework.permissions.AllowAny'],
-#     # },
-#     'HIDE_USERS': False,
-# }
-
-# # SIMPLE_JWT = {
-# #    'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
-# #    'AUTH_HEADER_TYPES': ('Bearer',),
-# # } 
+# SIMPLE_JWT = {
+#    'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
+#    'AUTH_HEADER_TYPES': ('Bearer',),
+# } 
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -146,14 +140,3 @@ STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static/'),)
 MEDIA_URL = '/media/'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
-
-
-
-EMAIL_HOST = 'smtp.yandex.com'
-
-EMAIL_HOST_USER = "noreply_team7@yamdb.ru"
-
-EMAIL_HOST_PASSWORD = "somepassword123"
-
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
