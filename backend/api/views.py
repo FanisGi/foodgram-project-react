@@ -13,13 +13,10 @@ from recipes.models import (
     Tags, Recipes, Ingredients, Subscriptions
 )
 from .filters import RecipesFilter
-# # from .permissions import (IsAdminOnly, IsAdminOrReadOnly,
-#                           ModeratorOwnerOrReadOnly)
 from .serializers import (
     TagsSerializer, RecipesSerializer, IngredientsSerializer, CustomUserSerializer,
     SubscriptionsSerializer, 
 )
-# from .utils import send_code
 
 User = get_user_model()
 
@@ -30,46 +27,23 @@ class CustomUsersViewSet(UserViewSet):
     permission_classes=(IsAuthenticated,)
 
     @action(
-        detail=False,
-    )
-    def subscriptions(self, request):
-        """
-        Возвращает пользователей, 
-        на которых подписан текущий пользователь. 
-        В выдачу добавляются рецепты.
-        """
-
-        subscriptions_data = User.objects.filter(
-            following__user=request.user
-        )
-        page = self.paginate_queryset(subscriptions_data)
-        serializer = SubscriptionsSerializer(
-            page, 
-            many=True, 
-            context={'request': request}
-        )
-        return self.get_paginated_response(serializer.data)
-
-    @action(
         detail=True,
-        methods=['POST', 'DELETE'],
+        methods=['POST', 'DELETE']
     )
-    def subscribe(self, request):
-        """
-        Подписаться или отписать на пользователя.
-        """
-        print('sadasdasdsadasdsadasd sad sa d')
+    def subscribe(self, request, **kwargs):
+        """Подписаться или отписать на пользователя."""
+
         user = request.user
-        author = request.id
+        author_id = kwargs['id']
+        author_obj = get_object_or_404(User, id=author_id)
 
         if request.method == 'POST':
             serializer = SubscriptionsSerializer(
-                data = request.data,
-                context={"request": request}
+                instance=author_obj,
+                data=request.data,
+                context={'request': request}
             )
             if serializer.is_valid():
-                user = request.user
-                author_id = request.id
                 Subscriptions.objects.create(
                     user=user, author_id=author_id
                 )
@@ -90,6 +64,27 @@ class CustomUsersViewSet(UserViewSet):
             )
             subscription.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=False,
+    )
+    def subscriptions(self, request):
+        """
+        Возвращает пользователей, 
+        на которых подписан текущий пользователь. 
+        В выдачу добавляются рецепты.
+        """
+
+        subscriptions_data = User.objects.filter(
+            following__user=request.user
+        )
+        page = self.paginate_queryset(subscriptions_data)
+        serializer = SubscriptionsSerializer(
+            page,
+            many=True,
+            context={'request': request}
+        )
+        return self.get_paginated_response(serializer.data)
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):

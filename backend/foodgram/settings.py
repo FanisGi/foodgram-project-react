@@ -7,7 +7,8 @@ load_dotenv('../infra/.env')
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-SECRET_KEY = os.getenv(key='SECRET_KEY')
+# SECRET_KEY = os.getenv(key='SECRET_KEY')
+SECRET_KEY = '^e&d+2drlanlltrt6!##-sr1^8@u6v@^v*nw(f@yxe=u)2$gcy'
 
 DEBUG = True
 

@@ -3,7 +3,6 @@ import base64
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserSerializer
 # from django.shortcuts import get_object_or_404
-# from django.forms import ValidationError
 from rest_framework import serializers
 
 from recipes.models import (
@@ -16,18 +15,20 @@ User = get_user_model()
 class CustomUserSerializer(UserSerializer):
     """Сериализатор пользователей."""
 
-    username = serializers.CharField(required=True)
+    username = serializers.CharField(read_only=True)
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed')
 
-    def get_is_subscribed(self, request):
-        """Подписан ли текущий пользователь на запрашимаего пользователя."""
+    def get_is_subscribed(self, obj):
+        """
+        Подписан ли текущий пользователь на запрашимаего пользователя.
+        """
 
         if Subscriptions.objects.filter(
-            author_id=request.id,
+            author_id=obj.id,
             user=self.context.get('request').user
         ).exists():
             return True
@@ -53,6 +54,7 @@ class IngredientsSerializer(serializers.ModelSerializer):
 
 class RecipesSerializer(serializers.ModelSerializer):
     """Сериализатор рецептов."""
+
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -85,7 +87,7 @@ class SubscriptionsSerializer(CustomUserSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
-    def get_recipes(self, request):
+    def get_recipes(self, obj):
         """
         Функция выдаёт список рецептов автора, 
         на которого подписан пользователь. 
@@ -93,7 +95,7 @@ class SubscriptionsSerializer(CustomUserSerializer):
         """
 
         recipes_data = Recipes.objects.filter(
-            author=request.id
+            author=obj.id
         )
         serializer = RecipeMinifiedSeriakizer(
             data=recipes_data, 
@@ -102,12 +104,13 @@ class SubscriptionsSerializer(CustomUserSerializer):
         serializer.is_valid()
         return serializer.data
     
-    def get_recipes_count(self, request):
+    def get_recipes_count(self, obj):
         """Количество рецептов у избранного автора."""
 
-        return request.recipes.count()
+        return obj.recipes.count()
     
     class Meta(CustomUserSerializer.Meta):
         fields = (
             CustomUserSerializer.Meta.fields + ('recipes', 'recipes_count',)
         )
+        read_only_fields = ('email', 'username',)

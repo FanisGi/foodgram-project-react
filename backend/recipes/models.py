@@ -200,7 +200,7 @@ class Subscriptions(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.user} подписался на {self.author}'
+        return f'{self.user} подписался на пользователя {self.author}'
 
 
 class Shoppingcart(models.Model):
