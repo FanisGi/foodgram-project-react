@@ -10,12 +10,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from recipes.models import (
-    Tags, Recipes, Ingredients, Subscriptions
+    Tags, Recipes, Ingredients, Subscriptions, Favorite,
 )
 from .filters import RecipesFilter
 from .serializers import (
     TagsSerializer, RecipesSerializer, IngredientsSerializer, CustomUserSerializer,
-    SubscriptionsSerializer, 
+    SubscriptionsSerializer, RecipeMinifiedSeriakizer, 
 )
 
 User = get_user_model()
@@ -57,12 +57,11 @@ class CustomUsersViewSet(UserViewSet):
                 )
         
         if request.method == 'DELETE':
-            subscription = get_object_or_404(
+            get_object_or_404(
                 Subscriptions,
                 user=user,
                 author_id=author_id
-            )
-            subscription.delete()
+            ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -104,3 +103,48 @@ class RecipesViewSet(viewsets.ModelViewSet):
     serializer_class = RecipesSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipesFilter
+
+    @action(
+        detail=True,
+        methods=['POST', 'DELETE'],
+        serializer_class = RecipeMinifiedSeriakizer
+    )
+    def favorite(self, request, **kwargs):
+        """Добавить или удалить рецепт в избранных у пользователя."""
+
+        recipe_id = kwargs['pk']
+        user = request.user
+        recipe_obj = get_object_or_404(Recipes, pk=recipe_id)
+        data = {
+            "id": recipe_id,
+            "name": recipe_obj.name,
+            "image": recipe_obj.image,
+            "cooking_time": recipe_obj.cooking_time,
+        }
+
+        if request.method == 'POST':
+            serializer = RecipeMinifiedSeriakizer(
+                instance=data,
+                data=request.data,
+                context={'request': request}
+            )
+            if serializer.is_valid():
+                Favorite.objects.create(
+                    user=user, recipe_id=recipe_id
+                )
+                return Response(
+                    serializer.data, status=status.HTTP_200_OK
+                )
+            else:
+                return Response(
+                    serializer.errors,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if request.method == 'DELETE':
+            get_object_or_404(
+                Favorite,
+                user=user,
+                recipe_id=recipe_id
+            ).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)

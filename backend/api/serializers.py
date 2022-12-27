@@ -78,7 +78,8 @@ class RecipeMinifiedSeriakizer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipes
-        fields = ('id', 'name', 'image', 'cooking_time',) 
+        fields = ('id', 'name', 'image', 'cooking_time',)
+        read_only_fields = ('name', 'image', 'cooking_time',)
 
 
 class SubscriptionsSerializer(CustomUserSerializer):
