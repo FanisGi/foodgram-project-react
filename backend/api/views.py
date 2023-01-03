@@ -10,12 +10,12 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from recipes.models import (
-    Tags, Recipes, Ingredients, Subscriptions, Favorite,
+    Tags, Recipes, Ingredients, Subscriptions, Favorite, Shoppingcart,
 )
 from .filters import RecipesFilter
 from .serializers import (
     TagsSerializer, RecipesSerializer, IngredientsSerializer, CustomUserSerializer,
-    SubscriptionsSerializer, RecipeMinifiedSeriakizer, 
+    SubscriptionsSerializer, RecipeMinifiedSerializer, 
 )
 
 User = get_user_model()
@@ -107,7 +107,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=['POST', 'DELETE'],
-        serializer_class = RecipeMinifiedSeriakizer
+        serializer_class = RecipeMinifiedSerializer
     )
     def favorite(self, request, **kwargs):
         """Добавить или удалить рецепт в избранных у пользователя."""
@@ -123,7 +123,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         }
 
         if request.method == 'POST':
-            serializer = RecipeMinifiedSeriakizer(
+            serializer = RecipeMinifiedSerializer(
                 instance=data,
                 data=request.data,
                 context={'request': request}
@@ -144,6 +144,60 @@ class RecipesViewSet(viewsets.ModelViewSet):
         if request.method == 'DELETE':
             get_object_or_404(
                 Favorite,
+                user=user,
+                recipe_id=recipe_id
+            ).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        detail=True,
+        methods=['GET'],
+    )
+    def download_shopping_cart(self, request, **kwargs):
+        """
+        Скачать файл со списком покупок. 
+        Формат PDF.
+        """
+        pass
+
+    @action(
+        detail=True,
+        methods=['POST', 'DELETE'],
+    )
+    def shopping_cart(self, request, **kwargs):
+        """Добавить или удалить рецепт из списка покупок."""
+        recipe_id = kwargs['pk']
+        user = request.user
+        recipe_obj = get_object_or_404(Recipes, pk=recipe_id)
+        data = {
+            "id": recipe_id,
+            "name": recipe_obj.name,
+            "image": recipe_obj.image,
+            "cooking_time": recipe_obj.cooking_time,
+        }
+
+        if request.method == 'POST':
+            serializer = RecipeMinifiedSerializer(
+                instance=data,
+                data=request.data,
+                context={'request': request}
+            )
+            if serializer.is_valid():
+                Shoppingcart.objects.create(
+                    user=user, recipe_id=recipe_id
+                )
+                return Response(
+                    serializer.data, status=status.HTTP_200_OK
+                )
+            else:
+                return Response(
+                    serializer.errors,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if request.method == 'DELETE':
+            get_object_or_404(
+                Shoppingcart,
                 user=user,
                 recipe_id=recipe_id
             ).delete()

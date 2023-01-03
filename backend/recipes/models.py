@@ -88,10 +88,10 @@ class Recipes(models.Model):
     image = models.ImageField(
         upload_to='recipes/images/', 
     )
-    tags = models.ForeignKey(
+    tags = models.ManyToManyField(
         Tags,
         verbose_name='Список тегов',
-        on_delete=models.CASCADE,
+        # on_delete=models.CASCADE,
     )
     ingredients = models.ManyToManyField(
         Ingredients,
@@ -109,7 +109,7 @@ class Recipes(models.Model):
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ('tags',)
+        ordering = ('name',)
 
     def __str__(self):
         return self.name[:STR_NUMBER]
@@ -120,13 +120,13 @@ class IngredientInRecipe(models.Model):
     ingredient = models.ForeignKey(
         Ingredients,
         verbose_name='ингредиент',
-        related_name='IngredientInRecipe',
+        related_name='ingredient_inrecipe',
         on_delete=models.CASCADE,
     )
     recipe = models.ForeignKey(
         Recipes,
         verbose_name='рецепт',
-        related_name='IngredientInRecipe',
+        related_name='ingredientin_recipe',
         on_delete=models.CASCADE,
     )
     amount = models.IntegerField(
@@ -204,7 +204,7 @@ class Subscriptions(models.Model):
 
 
 class Shoppingcart(models.Model):
-    """Модель списка покупок ингредиентов по рецепту."""
+    """Модель списка покупок ингредиентов по рецептам."""
     user = models.ForeignKey(
         Users,
         verbose_name='Пользователь',
