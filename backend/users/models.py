@@ -3,9 +3,10 @@ from django.db import models
 
 
 class Users(AbstractUser):
-
+    """Модель пользователей."""
     
     REQUIRED_FIELDS = ['first_name', 'last_name', 'username']
+    USERNAME_FIELD = 'email'
 
     USER = 'user'
     ADMIN = 'admin'
@@ -18,7 +19,6 @@ class Users(AbstractUser):
     bio = models.TextField(blank=True)
     role = models.CharField(max_length=20, choices=ROLES, default=USER)
     confirmation_code = models.CharField(max_length=255, blank=True, null=True)
-    USERNAME_FIELD = 'email'
 
     @property
     def is_admin(self):

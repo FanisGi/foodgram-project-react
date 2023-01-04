@@ -54,8 +54,13 @@ class IngredientsSerializer(serializers.ModelSerializer):
 
 
 class IngredientsInRecipesSerializers(serializers.ModelSerializer):
-
-    pass
+    """Сериализатор для связки рецепт-игредиент-количество."""
+    
+    id = serializers.IntegerField()
+    
+    class Meta:
+        model = IngredientInRecipe
+        fields = ('id', 'amount',)
 
 
 class RecipeMinifiedSerializer(serializers.ModelSerializer):
@@ -71,15 +76,14 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipes
         fields = ('id', 'name', 'image', 'cooking_time',)
-        read_only_fields = ('name', 'image', 'cooking_time',)
+        # read_only_fields = ('name', 'image', 'cooking_time',)
 
 
 class RecipesSerializer(RecipeMinifiedSerializer):
-    """Сериализатор рецептов."""
+    """Сериализатор рецептов для чтения данных."""
 
-    author = CustomUserSerializer()
-    tags = TagsSerializer(
-        many=True)
+    author = CustomUserSerializer(read_only=True)
+    tags = TagsSerializer(many=True, read_only=True)
     ingredients = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
@@ -124,6 +128,40 @@ class RecipesSerializer(RecipeMinifiedSerializer):
             'id', 'tags', 'author',
             'ingredients', 'is_favorited', 'is_in_shopping_cart'
         ) + RecipeMinifiedSerializer.Meta.fields
+
+
+class RecipesAddSerializer(RecipeMinifiedSerializer):
+    """Сериализатор рецептов для создания и редактирования данных."""
+
+    author = CustomUserSerializer(read_only=True)
+    tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tags.objects.all())
+    ingredients = IngredientsInRecipesSerializers(many=True)
+
+    class Meta(RecipeMinifiedSerializer.Meta):
+        model = Recipes
+        fields = (
+            'id', 'tags', 'author', 'ingredients', 'text',
+        ) + RecipeMinifiedSerializer.Meta.fields
+
+    def create(self, validated_data):
+        """Создание нового рецепта."""
+
+        ingredients = validated_data.pop('ingredients')
+        tags = validated_data.pop('tags')
+        author = self.context.get('request').user
+        recipe = Recipes.objects.create(author=author, **validated_data)
+        for ingredient in ingredients:
+            # print(recipe['id'])
+            current_ingredient, status = IngredientInRecipe.objects.create(
+                # **ingredient
+                ingredient_id=ingredient.get('id'),
+                recipe=recipe,
+                amount=ingredient.get('amount'),
+            )
+            # IngredientInRecipe.objects.create(
+            #     ingredient=current_ingredient, recipe=recipe
+            # )
+        return recipe
 
 
 class SubscriptionsSerializer(CustomUserSerializer):

@@ -15,7 +15,7 @@ from recipes.models import (
 from .filters import RecipesFilter
 from .serializers import (
     TagsSerializer, RecipesSerializer, IngredientsSerializer, CustomUserSerializer,
-    SubscriptionsSerializer, RecipeMinifiedSerializer, 
+    SubscriptionsSerializer, RecipeMinifiedSerializer, RecipesAddSerializer,
 )
 
 User = get_user_model()
@@ -103,6 +103,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
     serializer_class = RecipesSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipesFilter
+
+    def get_serializer_class(self):
+        print(self.action)
+        if self.action in ('create', 'update'):
+            return RecipesAddSerializer 
+        return RecipesSerializer
 
     @action(
         detail=True,
