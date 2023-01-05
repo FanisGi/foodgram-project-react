@@ -3,7 +3,8 @@ from django.db.models import F
 from djoser.serializers import UserSerializer
 # from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
-from rest_framework import serializers
+from rest_framework import serializers, validators
+from rest_framework.response import Response
 
 from recipes.models import (
     Tags, Recipes, IngredientInRecipe, Ingredients, Subscriptions,
@@ -56,7 +57,11 @@ class IngredientsSerializer(serializers.ModelSerializer):
 class IngredientsInRecipesSerializers(serializers.ModelSerializer):
     """Сериализатор для связки рецепт-игредиент-количество."""
     
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(
+        # source='ingredient_id'
+        )
+    # amount = serializers.IntegerField()
+    # # ingredient = serializers.IntegerField(source='id')
     
     class Meta:
         model = IngredientInRecipe
@@ -135,33 +140,49 @@ class RecipesAddSerializer(RecipeMinifiedSerializer):
 
     author = CustomUserSerializer(read_only=True)
     tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tags.objects.all())
-    ingredients = IngredientsInRecipesSerializers(many=True)
+    ingredients = IngredientsInRecipesSerializers(source='ingredientin_recipe', many=True)
 
     class Meta(RecipeMinifiedSerializer.Meta):
         model = Recipes
         fields = (
             'id', 'tags', 'author', 'ingredients', 'text',
         ) + RecipeMinifiedSerializer.Meta.fields
+        # validators = validators.UniqueTogetherValidator(
+        #     queryset=Recipes.objects.all(),
+        #     fields=['name', 'author']
+        # )
 
     def create(self, validated_data):
         """Создание нового рецепта."""
 
-        ingredients = validated_data.pop('ingredients')
+        ingredients = validated_data.pop('ingredientin_recipe')
         tags = validated_data.pop('tags')
         author = self.context.get('request').user
         recipe = Recipes.objects.create(author=author, **validated_data)
+        recipe.tags.set(tags)
+
         for ingredient in ingredients:
-            # print(recipe['id'])
-            current_ingredient, status = IngredientInRecipe.objects.create(
-                # **ingredient
-                ingredient_id=ingredient.get('id'),
-                recipe=recipe,
-                amount=ingredient.get('amount'),
+            amount = ingredient.get('amount')
+            current_ingredient = Ingredients.objects.get(
+                id = ingredient.get('id')
             )
-            # IngredientInRecipe.objects.create(
-            #     ingredient=current_ingredient, recipe=recipe
-            # )
+            IngredientInRecipe.objects.create(
+                recipe=recipe,
+                ingredient=current_ingredient,
+                amount=amount
+            )
+        
         return recipe
+    
+    def to_representation(self, instance):
+        """Переопределение Response-ответа."""
+        
+        context = {'request': self.context.get('request')}
+        serializer = RecipesSerializer(
+            instance=instance,
+            context=context
+        )
+        return serializer.data
 
 
 class SubscriptionsSerializer(CustomUserSerializer):
