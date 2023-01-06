@@ -105,8 +105,13 @@ class RecipesViewSet(viewsets.ModelViewSet):
     filterset_class = RecipesFilter
 
     def get_serializer_class(self):
-        print(self.action)
-        if self.action in ('create', 'update'):
+        """
+        Возвращает нужный сериализатор при разных операциях: 
+        GET, DELETE - RecipesSerializer; 
+        POST, UPDATE - RecipesAddSerializer.
+        """
+
+        if self.action in ('create', 'partial_update'):
             return RecipesAddSerializer 
         return RecipesSerializer
 

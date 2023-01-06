@@ -4,7 +4,6 @@ from djoser.serializers import UserSerializer
 # from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers, validators
-from rest_framework.response import Response
 
 from recipes.models import (
     Tags, Recipes, IngredientInRecipe, Ingredients, Subscriptions,
@@ -81,7 +80,6 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipes
         fields = ('id', 'name', 'image', 'cooking_time',)
-        # read_only_fields = ('name', 'image', 'cooking_time',)
 
 
 class RecipesSerializer(RecipeMinifiedSerializer):
@@ -130,8 +128,8 @@ class RecipesSerializer(RecipeMinifiedSerializer):
     class Meta(RecipeMinifiedSerializer.Meta):
         model = Recipes
         fields = (
-            'id', 'tags', 'author',
-            'ingredients', 'is_favorited', 'is_in_shopping_cart'
+            'id', 'tags', 'author', 'ingredients', 
+            'is_favorited', 'is_in_shopping_cart', 'text',
         ) + RecipeMinifiedSerializer.Meta.fields
 
 
@@ -147,10 +145,12 @@ class RecipesAddSerializer(RecipeMinifiedSerializer):
         fields = (
             'id', 'tags', 'author', 'ingredients', 'text',
         ) + RecipeMinifiedSerializer.Meta.fields
-        # validators = validators.UniqueTogetherValidator(
-        #     queryset=Recipes.objects.all(),
-        #     fields=['name', 'author']
-        # )
+        # validators = [
+        #     validators.UniqueTogetherValidator(
+        #         queryset=Recipes.objects.all(),
+        #         fields=['name', 'author']
+        #     )
+        # ]
 
     def create(self, validated_data):
         """Создание нового рецепта."""
@@ -174,6 +174,34 @@ class RecipesAddSerializer(RecipeMinifiedSerializer):
         
         return recipe
     
+    def update(self, instance, validated_data):
+        """Обновление рецепта."""
+
+        instance.name = validated_data.get('name', instance.name)
+        instance.text = validated_data.get('text', instance.text)
+        instance.image = validated_data.get('image', instance.image)
+        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        tags = validated_data.pop('tags')
+        instance.tags.set(tags)
+
+        old_ingredients = IngredientInRecipe.objects.filter(recipe_id=instance.id)
+        old_ingredients.delete()
+        new_ingredients = validated_data.pop('ingredientin_recipe')
+
+        for ingredient in new_ingredients:
+            current_ingredient = Ingredients.objects.get(
+                id = ingredient.get('id')
+            )
+            amount = ingredient.get('amount')
+            IngredientInRecipe.objects.create(
+                    recipe=instance,
+                    ingredient=current_ingredient,
+                    amount=amount
+                )
+
+        instance.save()
+        return instance
+
     def to_representation(self, instance):
         """Переопределение Response-ответа."""
         
