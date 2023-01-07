@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from djoser.views import UserViewSet
-# from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from django.http import HttpResponse
 from rest_framework import status, viewsets
 # from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
@@ -11,6 +11,7 @@ from rest_framework.response import Response
 
 from recipes.models import (
     Tags, Recipes, Ingredients, Subscriptions, Favorite, Shoppingcart,
+    IngredientInRecipe,
 )
 from .filters import RecipesFilter
 from .serializers import (
@@ -102,7 +103,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipes.objects.all()
     serializer_class = RecipesSerializer
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = RecipesFilter
+    filterset_class = RecipesFilter    
 
     def get_serializer_class(self):
         """
@@ -161,15 +162,38 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
-        detail=True,
+        detail=False,
         methods=['GET'],
     )
     def download_shopping_cart(self, request, **kwargs):
-        """
-        Скачать файл со списком покупок. 
-        Формат PDF.
-        """
-        pass
+        """Скачать файл со списком покупок. Формат TXT."""
+
+        shopping_cart = IngredientInRecipe.objects.filter(
+            recipe__shoppingcart_recipe__user = request.user,
+        ).values_list(
+            'ingredient__name',
+            'ingredient__measurement_unit',
+            'amount',
+        )
+
+        shopping_list = {}
+        for name, unit, amount in shopping_cart:
+            if name in shopping_list:
+                shopping_list[name]['amount'] += amount
+            else:
+                shopping_list[name] = {'unit': unit, 'amount': amount}
+        
+        content = f'Список покупок {request.user}'
+        for name, unit, amount in shopping_cart:
+            content += (
+                f'\n'
+                f'{name} - {shopping_list[amount]} - {shopping_list[unit]}'
+            )
+        file = 'data.txt'
+        # Протестировать с 'application/pdf' после слияния
+        response = HttpResponse(content, content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename={0}'.format(file)
+        return response
 
     @action(
         detail=True,

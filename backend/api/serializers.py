@@ -74,7 +74,7 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
     """
     image = Base64ImageField(
         # Для тестов, удалить перед слиянием
-        required=False, allow_null=True
+        # required=False, allow_null=True
     )
 
     class Meta:
