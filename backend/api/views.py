@@ -1,17 +1,17 @@
+from django.db.models import Sum
 from django.contrib.auth import get_user_model
 from djoser.views import UserViewSet
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
 from rest_framework import status, viewsets
-# from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from recipes.models import (
-    Tags, Recipes, Ingredients, Subscriptions, Favorite, Shoppingcart,
-    IngredientInRecipe,
+    Tags, Recipes, Ingredients, Subscriptions, 
+    Favorite, Shoppingcart, IngredientInRecipe,
 )
 from .filters import RecipesFilter
 from .serializers import (
@@ -165,33 +165,22 @@ class RecipesViewSet(viewsets.ModelViewSet):
         detail=False,
         methods=['GET'],
     )
-    def download_shopping_cart(self, request, **kwargs):
+    def download_shopping_cart(self, request):
         """Скачать файл со списком покупок. Формат TXT."""
 
         shopping_cart = IngredientInRecipe.objects.filter(
             recipe__shoppingcart_recipe__user = request.user,
-        ).values_list(
+        ).order_by('ingredient__name').values_list(
             'ingredient__name',
-            'ingredient__measurement_unit',
-            'amount',
-        )
+            'ingredient__measurement_unit'
+        ).annotate(amount=Sum('amount'))
 
-        shopping_list = {}
-        for name, unit, amount in shopping_cart:
-            if name in shopping_list:
-                shopping_list[name]['amount'] += amount
-            else:
-                shopping_list[name] = {'unit': unit, 'amount': amount}
-        
-        content = f'Список покупок {request.user}'
-        for name, unit, amount in shopping_cart:
-            content += (
-                f'\n'
-                f'{name} - {shopping_list[amount]} - {shopping_list[unit]}'
-            )
+        shopping_list = f'Список покупок {request.user}:\n'
+        for iter, (name, unit, amount) in enumerate(shopping_cart, start=1):
+            shopping_list += f'\n {iter}. {name} ({unit}) - {amount}'
+
         file = 'data.txt'
-        # Протестировать с 'application/pdf' после слияния
-        response = HttpResponse(content, content_type='text/plain')
+        response = HttpResponse(shopping_list, content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename={0}'.format(file)
         return response
 
@@ -201,6 +190,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     )
     def shopping_cart(self, request, **kwargs):
         """Добавить или удалить рецепт из списка покупок."""
+
         recipe_id = kwargs['pk']
         user = request.user
         recipe_obj = get_object_or_404(Recipes, pk=recipe_id)

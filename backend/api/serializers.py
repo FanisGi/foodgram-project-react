@@ -134,7 +134,7 @@ class RecipesSerializer(RecipeMinifiedSerializer):
 
 
 class RecipesAddSerializer(RecipeMinifiedSerializer):
-    """Сериализатор рецептов для создания и редактирования данных."""
+    """Сериализатор для создания и редактирования рецептов."""
 
     author = CustomUserSerializer(read_only=True)
     tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tags.objects.all())
@@ -145,12 +145,55 @@ class RecipesAddSerializer(RecipeMinifiedSerializer):
         fields = (
             'id', 'tags', 'author', 'ingredients', 'text',
         ) + RecipeMinifiedSerializer.Meta.fields
-        # validators = [
-        #     validators.UniqueTogetherValidator(
-        #         queryset=Recipes.objects.all(),
-        #         fields=['name', 'author']
-        #     )
-        # ]
+
+    def validate_name(self, data):
+        """Проверка на повторение рецептов одним автором."""
+
+        author = self.context.get('request').user
+        name_recipe = self.initial_data.get('name')
+        if Recipes.objects.filter(
+            author=author,
+            name=name_recipe
+        ).exists():
+            raise serializers.ValidationError(
+                f'У Вас уже есть рецепт с именем {name_recipe}. '
+                'Проверьте свой рецепт.'
+            )
+        return data
+    
+    def validate_tags(self, data):
+        """Проверка на выбор Tags. Min_value = 1."""
+
+        tags = self.initial_data.get('tags')
+        if len(tags) == 0:
+            raise serializers.ValidationError(
+                'Выберите хотя бы 1 Tags.'
+            )
+        return data
+
+    def validate_ingredients(self, data):
+        """Проверка на ингредиентов."""
+
+        ingredients = self.initial_data.get('ingredients')
+        if len(ingredients) == 0:
+            raise serializers.ValidationError(
+                'Выберите хотя бы 1 ингредиент из списка.'
+            )
+        ingredients_id = []
+        for ingredient in ingredients:
+            print(ingredient.get('id'))
+            if ingredient.get('id') in ingredients_id:
+                raise serializers.ValidationError(
+                    'Ингредиенты не могут повторятся. '
+                    'Проверьте свой рецепт.'
+                )
+            if ingredient.get('amount') in (None, 0):
+                raise serializers.ValidationError(
+                    'Количество ингредиента обязательно для заполнения. '
+                    'Минимальное значение 1.'
+                )
+            ingredients_id.append(ingredient.get('id'))
+        return data
 
     def create(self, validated_data):
         """Создание нового рецепта."""
@@ -218,6 +261,23 @@ class SubscriptionsSerializer(CustomUserSerializer):
 
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
+
+    def validate(self, data):
+        """Проверка подписок."""
+
+        user = self.context.get('request').user
+        author = self.instance
+        if user == author:
+            raise serializers.ValidationError(
+                'Нельзя подписаться на самого себя.'
+            )
+        if Subscriptions.objects.filter(
+            user=user, author=author
+        ).exists():
+            raise serializers.ValidationError(
+                f'Вы уже подписаны на {author}.'
+            )
+        return data
 
     def get_recipes(self, obj):
         """

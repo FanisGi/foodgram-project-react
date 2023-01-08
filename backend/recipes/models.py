@@ -183,6 +183,7 @@ class Favorite(models.Model):
 
 class Subscriptions(models.Model):
     """Модель с подписками на авторов."""
+    
     user = models.ForeignKey(
         Users,
         on_delete=models.CASCADE,
