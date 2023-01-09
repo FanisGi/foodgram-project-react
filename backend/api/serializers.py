@@ -1,9 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db.models import F
 from djoser.serializers import UserSerializer
-# from django.shortcuts import get_object_or_404
 from drf_extra_fields.fields import Base64ImageField
-from rest_framework import serializers, validators
+from rest_framework import serializers
 
 from recipes.models import (
     Tags, Recipes, IngredientInRecipe, Ingredients, Subscriptions,
@@ -73,13 +72,13 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
     Состоит из id, name, image, cooking_time.
     """
     image = Base64ImageField(
-        # Для тестов, удалить перед слиянием
-        # required=False, allow_null=True
+        required=False, allow_null=True
     )
 
     class Meta:
         model = Recipes
         fields = ('id', 'name', 'image', 'cooking_time',)
+        read_only_fields = ('name', 'image', 'cooking_time',)
 
 
 class RecipesSerializer(RecipeMinifiedSerializer):
@@ -91,6 +90,13 @@ class RecipesSerializer(RecipeMinifiedSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
+    class Meta(RecipeMinifiedSerializer.Meta):
+        model = Recipes
+        fields = (
+            'id', 'tags', 'author', 'ingredients', 
+            'is_favorited', 'is_in_shopping_cart', 'text',
+        ) + RecipeMinifiedSerializer.Meta.fields
+    
     def get_ingredients(self, obj):
         """Игредиенты рецепта с требуемым количеством."""
 
@@ -124,14 +130,7 @@ class RecipesSerializer(RecipeMinifiedSerializer):
             return True
 
         return False
-
-    class Meta(RecipeMinifiedSerializer.Meta):
-        model = Recipes
-        fields = (
-            'id', 'tags', 'author', 'ingredients', 
-            'is_favorited', 'is_in_shopping_cart', 'text',
-        ) + RecipeMinifiedSerializer.Meta.fields
-
+        
 
 class RecipesAddSerializer(RecipeMinifiedSerializer):
     """Сериализатор для создания и редактирования рецептов."""
@@ -262,8 +261,14 @@ class SubscriptionsSerializer(CustomUserSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
+    class Meta(CustomUserSerializer.Meta):
+        fields = (
+            CustomUserSerializer.Meta.fields + ('recipes', 'recipes_count',)
+        )
+        read_only_fields = ('email', 'username',)
+
     def validate(self, data):
-        """Проверка подписок."""
+        """Проверка подписок пользователя."""
 
         user = self.context.get('request').user
         author = self.instance
@@ -300,9 +305,3 @@ class SubscriptionsSerializer(CustomUserSerializer):
         """Количество рецептов у избранного автора."""
 
         return obj.recipes.count()
-    
-    class Meta(CustomUserSerializer.Meta):
-        fields = (
-            CustomUserSerializer.Meta.fields + ('recipes', 'recipes_count',)
-        )
-        read_only_fields = ('email', 'username',)

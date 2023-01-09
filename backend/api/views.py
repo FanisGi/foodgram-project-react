@@ -13,9 +13,10 @@ from recipes.models import (
     Tags, Recipes, Ingredients, Subscriptions, 
     Favorite, Shoppingcart, IngredientInRecipe,
 )
+from .utils import add_del_recipesview
 from .filters import RecipesFilter
 from .serializers import (
-    TagsSerializer, RecipesSerializer, IngredientsSerializer, CustomUserSerializer,
+    TagsSerializer, RecipesSerilizer, IngredientsSerializer, CustomUserSerializer,
     SubscriptionsSerializer, RecipeMinifiedSerializer, RecipesAddSerializer,
 )
 
@@ -25,7 +26,7 @@ User = get_user_model()
 class CustomUsersViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
-    permission_classes=(IsAuthenticated,)
+    # permission_classes=(IsAuthenticated,)
 
     @action(
         detail=True,
@@ -124,42 +125,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def favorite(self, request, **kwargs):
         """Добавить или удалить рецепт в избранных у пользователя."""
 
-        recipe_id = kwargs['pk']
-        user = request.user
-        recipe_obj = get_object_or_404(Recipes, pk=recipe_id)
-        data = {
-            "id": recipe_id,
-            "name": recipe_obj.name,
-            "image": recipe_obj.image,
-            "cooking_time": recipe_obj.cooking_time,
-        }
-
-        if request.method == 'POST':
-            serializer = RecipeMinifiedSerializer(
-                instance=data,
-                data=request.data,
-                context={'request': request}
-            )
-            if serializer.is_valid():
-                Favorite.objects.create(
-                    user=user, recipe_id=recipe_id
-                )
-                return Response(
-                    serializer.data, status=status.HTTP_200_OK
-                )
-            else:
-                return Response(
-                    serializer.errors,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        if request.method == 'DELETE':
-            get_object_or_404(
-                Favorite,
-                user=user,
-                recipe_id=recipe_id
-            ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        return add_del_recipesview(request, Favorite, **kwargs)
 
     @action(
         detail=False,
@@ -179,9 +145,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
         for iter, (name, unit, amount) in enumerate(shopping_cart, start=1):
             shopping_list += f'\n {iter}. {name} ({unit}) - {amount}'
 
-        file = 'data.txt'
+        filename = 'data.txt'
         response = HttpResponse(shopping_list, content_type='text/plain')
-        response['Content-Disposition'] = f'attachment; filename={0}'.format(file)
+        response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
 
     @action(
@@ -191,39 +157,4 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, **kwargs):
         """Добавить или удалить рецепт из списка покупок."""
 
-        recipe_id = kwargs['pk']
-        user = request.user
-        recipe_obj = get_object_or_404(Recipes, pk=recipe_id)
-        data = {
-            "id": recipe_id,
-            "name": recipe_obj.name,
-            "image": recipe_obj.image,
-            "cooking_time": recipe_obj.cooking_time,
-        }
-
-        if request.method == 'POST':
-            serializer = RecipeMinifiedSerializer(
-                instance=data,
-                data=request.data,
-                context={'request': request}
-            )
-            if serializer.is_valid():
-                Shoppingcart.objects.create(
-                    user=user, recipe_id=recipe_id
-                )
-                return Response(
-                    serializer.data, status=status.HTTP_200_OK
-                )
-            else:
-                return Response(
-                    serializer.errors,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        if request.method == 'DELETE':
-            get_object_or_404(
-                Shoppingcart,
-                user=user,
-                recipe_id=recipe_id
-            ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        return add_del_recipesview(request, Shoppingcart, **kwargs)

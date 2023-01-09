@@ -13,7 +13,7 @@ SECRET_KEY = '^e&d+2drlanlltrt6!##-sr1^8@u6v@^v*nw(f@yxe=u)2$gcy'
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 INSTALLED_APPS = [
@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'recipes',
     'api',
     'rest_framework',
+    'corsheaders',
     'rest_framework.authtoken',
     'django_filters',
     'djoser',
@@ -45,7 +46,7 @@ REST_FRAMEWORK = {
 
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
 
-    'PAGE_SIZE': 3,
+    'PAGE_SIZE': 5,
 
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.NamespaceVersioning'
@@ -62,14 +63,10 @@ DJOSER = {
     'HIDE_USERS': False,
 }
 
-# SIMPLE_JWT = {
-#    'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
-#    'AUTH_HEADER_TYPES': ('Bearer',),
-# } 
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
