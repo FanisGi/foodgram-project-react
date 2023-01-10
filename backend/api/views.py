@@ -16,7 +16,7 @@ from recipes.models import (
 from .utils import add_del_recipesview
 from .filters import RecipesFilter
 from .serializers import (
-    TagsSerializer, RecipesSerilizer, IngredientsSerializer, CustomUserSerializer,
+    TagsSerializer, IngredientsSerializer, CustomUserSerializer, RecipesSerializer,
     SubscriptionsSerializer, RecipeMinifiedSerializer, RecipesAddSerializer,
 )
 
@@ -125,7 +125,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def favorite(self, request, **kwargs):
         """Добавить или удалить рецепт в избранных у пользователя."""
 
-        return add_del_recipesview(request, Favorite, **kwargs)
+        return add_del_recipesview(
+            request, Favorite, RecipeMinifiedSerializer, **kwargs
+        )
 
     @action(
         detail=False,
@@ -157,4 +159,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, **kwargs):
         """Добавить или удалить рецепт из списка покупок."""
 
-        return add_del_recipesview(request, Shoppingcart, **kwargs)
+        return add_del_recipesview(
+            request, Shoppingcart, RecipeMinifiedSerializer, **kwargs
+        )

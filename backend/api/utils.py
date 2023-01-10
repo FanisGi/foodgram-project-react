@@ -2,17 +2,17 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 
-from recipes.models import Recipes
-from .serializers import RecipeMinifiedSerializer
+from recipes.models import (
+    Recipes, IngredientInRecipe, Ingredients, Subscriptions
+)
 
 
-def add_del_recipesview(request, model, **kwargs):
+def add_del_recipesview(request, model, RecipeMinifiedSerializer, **kwargs):
     """
     Утилита для view функции recipes. Применяется для:
     Добавить или удалить рецепт в избранных у пользователя. 
     Добавить или удалить рецепт из списка покупок.
     """
-
     recipe_id = kwargs['pk']
     user = request.user
     recipe_obj = get_object_or_404(Recipes, pk=recipe_id)
@@ -49,3 +49,58 @@ def add_del_recipesview(request, model, **kwargs):
             recipe_id=recipe_id
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+def boolean_serializers_item(self, model, obj):
+
+    """
+    Утилита для получения булевой переменной в сериализаторах:
+
+    1. CustomUserSerializer - get_is_subscribed: 
+    Подписан ли текущий пользователь на запрашимаего пользователя.
+
+    2. RecipesSerializer - get_is_favorited:
+   Показывает, находится ли рецепт в списке избранных.
+
+    3. RecipesSerializer - get_is_shopping_cart:
+    Показывает, находится ли рецепт в списке покупок.
+    """
+    if model == Subscriptions:
+        if model.objects.filter(
+            author_id=obj.id,
+            user=self.context.get('request').user
+        ).exists():
+            return True
+        return False
+    
+    else:
+        if model.objects.filter(
+            recipe_id=obj.id,
+            user=self.context.get('request').user
+        ).exists():
+            return True
+        return False
+
+def create_update_recipes(validated_data, author=None, instance=None):
+    """Утилита для RecipesSerializer для методов create, update."""
+    tags = validated_data.pop('tags')
+    ingredients = validated_data.pop('ingredientin_recipe')
+
+    if instance is None:
+        recipe = Recipes.objects.create(author=author, **validated_data)
+    else:
+        recipe = instance
+    
+    recipe.tags.set(tags)
+
+    for ingredient in ingredients:
+        amount = ingredient.get('amount')
+        current_ingredient = Ingredients.objects.get(
+            id = ingredient.get('id')
+        )
+        IngredientInRecipe.objects.create(
+            recipe=recipe,
+            ingredient=current_ingredient,
+            amount=amount
+        )
+
+    return recipe
