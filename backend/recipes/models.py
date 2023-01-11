@@ -91,6 +91,7 @@ class Recipes(models.Model):
     tags = models.ManyToManyField(
         Tags,
         verbose_name='Список тегов',
+        # related_name='recipes',
         # on_delete=models.CASCADE,
     )
     ingredients = models.ManyToManyField(
@@ -109,7 +110,7 @@ class Recipes(models.Model):
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ('name',)
+        ordering = ('-id',)
         constraints = [
             models.UniqueConstraint(
                 fields=['name', 'author'],

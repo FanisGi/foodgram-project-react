@@ -1,22 +1,14 @@
 from django_filters import rest_framework as filters
-
-from recipes.models import Recipes
+from recipes.models import Recipes, Tags
 
 
 class RecipesFilter(filters.FilterSet):
-    author = filters.CharFilter(
-        field_name='author',
-        # lookup_expr='icontains'
+
+    tags = filters.ModelMultipleChoiceFilter(
+        to_field_name='slug',
+        queryset=Tags.objects.all()
     )
-    tags = filters.CharFilter(
-        field_name='tags',
-        # lookup_expr='icontains'
-    )
-    # genre = filters.CharFilter(
-    #     field_name='genre__slug',
-    #     lookup_expr='icontains'
-    # )
 
     class Meta:
         model = Recipes
-        fields = ('author', 'tags',)
+        fields = ('tags',)

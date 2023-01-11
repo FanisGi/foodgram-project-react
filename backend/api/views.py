@@ -66,9 +66,7 @@ class CustomUsersViewSet(UserViewSet):
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-        detail=False,
-    )
+    @action(detail=False)
     def subscriptions(self, request):
         """
         Возвращает пользователей, 
@@ -104,7 +102,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipes.objects.all()
     serializer_class = RecipesSerializer
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = RecipesFilter    
+    filterset_class = RecipesFilter
 
     def get_serializer_class(self):
         """
