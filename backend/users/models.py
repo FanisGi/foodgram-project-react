@@ -5,7 +5,7 @@ from django.db import models
 class Users(AbstractUser):
     """Модель пользователей."""
     
-    REQUIRED_FIELDS = ['first_name', 'last_name', 'username']
+    REQUIRED_FIELDS = ('first_name', 'last_name', 'username', )
     USERNAME_FIELD = 'email'
 
     USER = 'user'

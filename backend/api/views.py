@@ -4,10 +4,11 @@ from djoser.views import UserViewSet
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from django.core.paginator import Paginator
 
 from recipes.models import (
     Tags, Recipes, Ingredients, Subscriptions, 
@@ -15,6 +16,7 @@ from recipes.models import (
 )
 from .utils import add_del_recipesview
 from .filters import RecipesFilter
+from .pagination import CustomPagination
 from .serializers import (
     TagsSerializer, IngredientsSerializer, CustomUserSerializer, RecipesSerializer,
     SubscriptionsSerializer, RecipeMinifiedSerializer, RecipesAddSerializer,
@@ -26,7 +28,8 @@ User = get_user_model()
 class CustomUsersViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
-    # permission_classes=(IsAuthenticated,)
+    permission_classes = (AllowAny,)
+    pagination_class = CustomPagination
 
     @action(
         detail=True,
@@ -38,7 +41,7 @@ class CustomUsersViewSet(UserViewSet):
         user = request.user
         author_id = kwargs['id']
         author_obj = get_object_or_404(User, id=author_id)
-
+        
         if request.method == 'POST':
             serializer = SubscriptionsSerializer(
                 instance=author_obj,
@@ -66,24 +69,36 @@ class CustomUsersViewSet(UserViewSet):
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False)
+    @action(detail=False, pagination_class = CustomPagination)
     def subscriptions(self, request):
         """
         Возвращает пользователей, 
         на которых подписан текущий пользователь. 
         В выдачу добавляются рецепты.
         """
-
         subscriptions_data = User.objects.filter(
             following__user=request.user
         )
-        page = self.paginate_queryset(subscriptions_data)
+        paginator = Paginator(subscriptions_data, 5)
+        page = request.query_params.get('page')
+        data = paginator.page(page)
         serializer = SubscriptionsSerializer(
-            page,
+            instance=data,
             many=True,
             context={'request': request}
         )
-        return self.get_paginated_response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # subscriptions_data = User.objects.filter(
+        #     following__user=request.user
+        # )
+        # page = self.paginate_queryset(subscriptions_data)
+        # serializer = SubscriptionsSerializer(
+        #     page,
+        #     many=True,
+        #     context={'request': request}
+        # )
+        # return self.get_paginated_response(serializer.data)
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -96,6 +111,8 @@ class ingredientsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredients.objects.all()
     serializer_class = IngredientsSerializer
     pagination_class = None
+    filter_backends = (filters.SearchFilter,)
+    filterset_class = ('name',)
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
@@ -118,6 +135,17 @@ class RecipesViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=['POST', 'DELETE'],
+    )
+    def shopping_cart(self, request, **kwargs):
+        """Добавить или удалить рецепт из списка покупок."""
+
+        return add_del_recipesview(
+            request, Shoppingcart, RecipeMinifiedSerializer, **kwargs
+        )
+
+    @action(
+        detail=True,
+        methods=['POST', 'DELETE'],
         serializer_class = RecipeMinifiedSerializer
     )
     def favorite(self, request, **kwargs):
@@ -127,10 +155,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             request, Favorite, RecipeMinifiedSerializer, **kwargs
         )
 
-    @action(
-        detail=False,
-        methods=['GET'],
-    )
+    @action(detail=False)
     def download_shopping_cart(self, request):
         """Скачать файл со списком покупок. Формат TXT."""
 
@@ -149,14 +174,3 @@ class RecipesViewSet(viewsets.ModelViewSet):
         response = HttpResponse(shopping_list, content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
-
-    @action(
-        detail=True,
-        methods=['POST', 'DELETE'],
-    )
-    def shopping_cart(self, request, **kwargs):
-        """Добавить или удалить рецепт из списка покупок."""
-
-        return add_del_recipesview(
-            request, Shoppingcart, RecipeMinifiedSerializer, **kwargs
-        )
