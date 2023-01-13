@@ -228,11 +228,12 @@ class SubscriptionsSerializer(CustomUserSerializer):
         на которого подписан пользователь. 
         В каждом списке хранится id, name, image, cooking_time.
         """
+        limit = self.context.get('request')._request.GET.get('recipes_limit')
         recipes_data = Recipes.objects.filter(
             author=obj.id
         )
         serializer = RecipeMinifiedSerializer(
-            data=recipes_data, 
+            data=recipes_data[:int(limit)], 
             many=True
         )
         serializer.is_valid()

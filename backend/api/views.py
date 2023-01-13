@@ -4,19 +4,17 @@ from djoser.views import UserViewSet
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import HttpResponse
-from rest_framework import status, viewsets, filters
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from django.core.paginator import Paginator
 
 from recipes.models import (
     Tags, Recipes, Ingredients, Subscriptions, 
     Favorite, Shoppingcart, IngredientInRecipe,
 )
 from .utils import add_del_recipesview
-from .filters import RecipesFilter
-from .pagination import CustomPagination
+from .filters import RecipesFilter, IngredientsFilter
 from .serializers import (
     TagsSerializer, IngredientsSerializer, CustomUserSerializer, RecipesSerializer,
     SubscriptionsSerializer, RecipeMinifiedSerializer, RecipesAddSerializer,
@@ -29,7 +27,6 @@ class CustomUsersViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = (AllowAny,)
-    pagination_class = CustomPagination
 
     @action(
         detail=True,
@@ -69,7 +66,7 @@ class CustomUsersViewSet(UserViewSet):
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, pagination_class = CustomPagination)
+    @action(detail=False)
     def subscriptions(self, request):
         """
         Возвращает пользователей, 
@@ -79,26 +76,13 @@ class CustomUsersViewSet(UserViewSet):
         subscriptions_data = User.objects.filter(
             following__user=request.user
         )
-        paginator = Paginator(subscriptions_data, 5)
-        page = request.query_params.get('page')
-        data = paginator.page(page)
+        page = self.paginate_queryset(subscriptions_data)
         serializer = SubscriptionsSerializer(
-            instance=data,
+            page,
             many=True,
             context={'request': request}
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-        # subscriptions_data = User.objects.filter(
-        #     following__user=request.user
-        # )
-        # page = self.paginate_queryset(subscriptions_data)
-        # serializer = SubscriptionsSerializer(
-        #     page,
-        #     many=True,
-        #     context={'request': request}
-        # )
-        # return self.get_paginated_response(serializer.data)
+        return self.get_paginated_response(serializer.data)
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -107,12 +91,11 @@ class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
 
-class ingredientsViewSet(viewsets.ReadOnlyModelViewSet):
+class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredients.objects.all()
     serializer_class = IngredientsSerializer
     pagination_class = None
-    filter_backends = (filters.SearchFilter,)
-    filterset_class = ('name',)
+    filterset_class = IngredientsFilter
 
 
 class RecipesViewSet(viewsets.ModelViewSet):

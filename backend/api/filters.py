@@ -1,5 +1,17 @@
 from django_filters import rest_framework as filters
-from recipes.models import Recipes, Tags, Favorite, Shoppingcart
+from recipes.models import Recipes, Tags, Favorite, Shoppingcart, Ingredients
+
+
+class IngredientsFilter(filters.FilterSet):
+
+    name = filters.CharFilter(
+        field_name='name',
+        lookup_expr='istartswith'
+    )
+
+    class Meta:
+        model = Ingredients
+        fields = ('name',)
 
 
 class RecipesFilter(filters.FilterSet):
@@ -26,12 +38,10 @@ class RecipesFilter(filters.FilterSet):
         user = self.request.user
         if Favorite.objects.filter(user=user).exists():
             return queryset.filter(favorite_recipe__user=user)
-        
         return queryset
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
         if Shoppingcart.objects.filter(user=user).exists():
             return queryset.filter(shoppingcart_recipe__user=user)
-        
         return queryset
