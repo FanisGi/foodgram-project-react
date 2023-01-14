@@ -2,9 +2,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 
-from recipes.models import (
-    Recipes, IngredientInRecipe, Ingredients, Subscriptions
-)
+from recipes.models import (IngredientInRecipe, Ingredients, Recipes,
+                            Subscriptions)
 
 
 def add_del_recipesview(request, model, RecipeMinifiedSerializer, **kwargs):
@@ -64,10 +63,15 @@ def boolean_serializers_item(self, model, obj):
     3. RecipesSerializer - get_is_shopping_cart:
     Показывает, находится ли рецепт в списке покупок.
     """
-    if model == Subscriptions:
+    user = self.context.get('request').user
+    
+    if user.is_anonymous:
+        return False
+
+    elif model == Subscriptions:
         if model.objects.filter(
             author_id=obj.id,
-            user=self.context.get('request').user
+            user=user
         ).exists():
             return True
         return False
@@ -75,7 +79,7 @@ def boolean_serializers_item(self, model, obj):
     else:
         if model.objects.filter(
             recipe_id=obj.id,
-            user=self.context.get('request').user
+            user=user
         ).exists():
             return True
         return False

@@ -1,9 +1,13 @@
 from django_filters import rest_framework as filters
-from recipes.models import Recipes, Tags, Favorite, Shoppingcart, Ingredients
+
+from recipes.models import Favorite, Ingredients, Recipes, Shoppingcart, Tags
 
 
 class IngredientsFilter(filters.FilterSet):
-
+    """
+    Фильтрация ингредиентов по полю 'name'
+    регистронезависимо, по вхождению в начало названия.
+    """
     name = filters.CharFilter(
         field_name='name',
         lookup_expr='istartswith'
@@ -17,8 +21,8 @@ class IngredientsFilter(filters.FilterSet):
 class RecipesFilter(filters.FilterSet):
     """
     Фильтрация рецептов по нескольким тегам в комбинации «или».
-    Метод filter_is_favorited - фильтрует queryset по избранных рецептам. 
-    Метод filter_is_in_shopping_cart - фильтрует queryset по авторам, 
+    Метод filter_is_favorited - фильтрует queryset по избранных рецептам.
+    Метод filter_is_in_shopping_cart - фильтрует queryset по авторам,
     на которых подписан пользователь.
     """
     tags = filters.ModelMultipleChoiceFilter(
@@ -36,12 +40,16 @@ class RecipesFilter(filters.FilterSet):
 
     def filter_is_favorited(self, queryset, name, value):
         user = self.request.user
+
         if Favorite.objects.filter(user=user).exists():
             return queryset.filter(favorite_recipe__user=user)
+
         return queryset
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
+
         if Shoppingcart.objects.filter(user=user).exists():
             return queryset.filter(shoppingcart_recipe__user=user)
+
         return queryset

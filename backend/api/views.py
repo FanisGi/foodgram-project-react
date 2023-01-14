@@ -1,24 +1,24 @@
-from django.db.models import Sum
 from django.contrib.auth import get_user_model
-from djoser.views import UserViewSet
+from django.db.models import Sum
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from django.http import HttpResponse
+from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from recipes.models import (
-    Tags, Recipes, Ingredients, Subscriptions, 
-    Favorite, Shoppingcart, IngredientInRecipe,
-)
+from recipes.models import (Favorite, IngredientInRecipe, Ingredients, Recipes,
+                            Shoppingcart, Subscriptions, Tags)
+
+from .filters import IngredientsFilter, RecipesFilter
+from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
+from .serializers import (CustomUserSerializer, IngredientsSerializer,
+                          RecipeMinifiedSerializer, RecipesAddSerializer,
+                          RecipesSerializer, SubscriptionsSerializer,
+                          TagsSerializer)
 from .utils import add_del_recipesview
-from .filters import RecipesFilter, IngredientsFilter
-from .serializers import (
-    TagsSerializer, IngredientsSerializer, CustomUserSerializer, RecipesSerializer,
-    SubscriptionsSerializer, RecipeMinifiedSerializer, RecipesAddSerializer,
-)
 
 User = get_user_model()
 
@@ -26,11 +26,11 @@ User = get_user_model()
 class CustomUsersViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
-    permission_classes = (AllowAny,)
 
     @action(
         detail=True,
-        methods=['POST', 'DELETE']
+        methods=['POST', 'DELETE'],
+        permission_classes=(IsAuthenticated,)
     )
     def subscribe(self, request, **kwargs):
         """Подписаться или отписать на пользователя."""
@@ -66,7 +66,10 @@ class CustomUsersViewSet(UserViewSet):
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False)
+    @action(
+        detail=False,
+        permission_classes=(IsAuthenticated,)
+    )
     def subscriptions(self, request):
         """
         Возвращает пользователей, 
@@ -89,6 +92,7 @@ class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tags.objects.all()
     serializer_class = TagsSerializer
     pagination_class = None
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
@@ -96,6 +100,7 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientsSerializer
     pagination_class = None
     filterset_class = IngredientsFilter
+    permission_classes = (IsAdminOrReadOnly,)
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
@@ -103,14 +108,14 @@ class RecipesViewSet(viewsets.ModelViewSet):
     serializer_class = RecipesSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipesFilter
+    permission_classes = (IsAuthorOrReadOnly | IsAdminOrReadOnly,)
 
     def get_serializer_class(self):
         """
         Возвращает нужный сериализатор при разных операциях: 
         GET, DELETE - RecipesSerializer; 
-        POST, UPDATE - RecipesAddSerializer.
+        POST, UPDATE, DELETE - RecipesAddSerializer.
         """
-
         if self.action in ('create', 'partial_update'):
             return RecipesAddSerializer 
         return RecipesSerializer
@@ -118,10 +123,10 @@ class RecipesViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=['POST', 'DELETE'],
+        permission_classes=(IsAuthenticated,)
     )
     def shopping_cart(self, request, **kwargs):
         """Добавить или удалить рецепт из списка покупок."""
-
         return add_del_recipesview(
             request, Shoppingcart, RecipeMinifiedSerializer, **kwargs
         )
@@ -129,19 +134,20 @@ class RecipesViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=['POST', 'DELETE'],
-        serializer_class = RecipeMinifiedSerializer
+        permission_classes=(IsAuthenticated,)
     )
     def favorite(self, request, **kwargs):
         """Добавить или удалить рецепт в избранных у пользователя."""
-
         return add_del_recipesview(
             request, Favorite, RecipeMinifiedSerializer, **kwargs
         )
 
-    @action(detail=False)
+    @action(
+        detail=False,
+        permission_classes=(IsAuthenticated,)
+    )
     def download_shopping_cart(self, request):
         """Скачать файл со списком покупок. Формат TXT."""
-
         shopping_cart = IngredientInRecipe.objects.filter(
             recipe__shoppingcart_recipe__user = request.user,
         ).order_by('ingredient__name').values_list(

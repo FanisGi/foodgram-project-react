@@ -1,18 +1,31 @@
-from django.contrib.auth import get_user_model
-from rest_framework.permissions import BasePermission, SAFE_METHODS
-
-User = get_user_model()
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
-# class ReadOnly(BasePermission):
+class IsAdminOrReadOnly(BasePermission):
+    """
+    Органичения прав.
+    Доступ на чтение у всех пользователей, в том числе у анонимных.
+    """
 
-#     # Права на уровне запроса и пользователя
-#     def has_object_permission(self, request, view, obj):
-#         return (request.method in SAFE_METHODS
-#                 or request.user.is_user
-#                 or obj.author == request.user)
+    def has_permission(self, request, view):
+        return (
+            request.method in SAFE_METHODS
+            or request.user.is_admin
+        )
 
-#     # Права на уровне объекта
-#     def has_permission(self, request, view):
-#         return (request.method in SAFE_METHODS
-#                 or request.user.is_authenticated)
+
+class IsAuthorOrReadOnly(BasePermission):
+    """
+    Органичения прав.
+    Доступ на чтение у всех пользователей, в том числе у анонимных.
+    Доступ на изменение объекта есть только у автора.
+    """
+
+    def has_permission(self, request, view):
+        return (
+            request.method in SAFE_METHODS
+            or request.user.is_authenticated
+        )
+
+    def has_object_permission(self, request, view, obj):
+        return obj.author == request.user

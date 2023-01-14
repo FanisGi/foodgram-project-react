@@ -1,11 +1,10 @@
 import os
-
 from csv import DictReader
-from django.core.management import BaseCommand
+
 from django.conf import settings
+from django.core.management import BaseCommand
 
 from recipes.models import Ingredients
-
 
 ingredients_file = os.path.join(
     settings.BASE_DIR,

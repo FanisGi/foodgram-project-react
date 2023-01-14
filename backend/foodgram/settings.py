@@ -7,11 +7,10 @@ load_dotenv('../infra/.env')
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-# SECRET_KEY = os.getenv(key='SECRET_KEY')
-# Для режима дебага
-SECRET_KEY = '^e&d+2drlanlltrt6!##-sr1^8@u6v@^v*nw(f@yxe=u)2$gcy'
+SECRET_KEY = os.getenv(key='SECRET_KEY')
 
 DEBUG = True
+
 
 ALLOWED_HOSTS = ['*']
 
@@ -33,11 +32,12 @@ INSTALLED_APPS = [
     'djoser',
 ]
 
+
 AUTH_USER_MODEL = 'users.Users'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny', 
+        'rest_framework.permissions.IsAuthenticated' 
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
@@ -49,20 +49,18 @@ REST_FRAMEWORK = {
 }
 
 DJOSER = {
+    'HIDE_USERS': False,
     'SERIALIZERS': {
         'user': 'api.serializers.CustomUserSerializer',
     },
-    # 'PERMISSIONS': {
-    #     'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
-    #     'user_list': ['rest_framework.permissions.IsAuthenticatedOrReadOnly'],
-    # },
-    'HIDE_USERS': False,
+    'PERMISSIONS': {
+        'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
+    },
 }
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    # 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',

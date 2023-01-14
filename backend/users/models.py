@@ -5,7 +5,7 @@ from django.db import models
 class Users(AbstractUser):
     """Модель пользователей."""
     
-    REQUIRED_FIELDS = ('first_name', 'last_name', 'username', )
+    REQUIRED_FIELDS = ('first_name', 'last_name', 'username',)
     USERNAME_FIELD = 'email'
 
     USER = 'user'
@@ -18,15 +18,13 @@ class Users(AbstractUser):
     email = models.EmailField(max_length=254, unique=True, blank=False)
     bio = models.TextField(blank=True)
     role = models.CharField(max_length=20, choices=ROLES, default=USER)
-    confirmation_code = models.CharField(max_length=255, blank=True, null=True)
+    confirmation_code = models.CharField(
+        max_length=255, blank=True, null=True
+    )
 
     @property
     def is_admin(self):
         return self.role == self.ADMIN or self.is_superuser
-
-    @property
-    def is_user(self):
-        return self.role == self.USER
 
     class Meta:
         ordering = ['username']
