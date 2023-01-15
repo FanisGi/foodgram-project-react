@@ -1,6 +1,5 @@
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
-
 from users.models import Users
 
 STR_NUMBER = 15
@@ -147,6 +146,12 @@ class IngredientInRecipe(models.Model):
         verbose_name = 'ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецепте'
         ordering = ('recipe',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['ingredient', 'recipe'],
+                name='ingredient_in_recipe_unique',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.recipe} - {self.ingredient}'

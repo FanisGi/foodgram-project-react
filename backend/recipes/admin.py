@@ -5,10 +5,16 @@ from .models import (Favorite, IngredientInRecipe, Ingredients, Recipes,
                      Shoppingcart, Subscriptions, Tags)
 
 
+class IngrediensInRecipeInline(admin.TabularInline):
+    model = IngredientInRecipe
+    fields = ('ingredient', 'amount',)
+
+
 class RecipesAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author', 'count_favorite')
+    list_display = ('name', 'author', 'count_favorite',)
     search_fields = ('author', 'name', 'tags',)
     list_filter = ('author', 'name', 'tags',)
+    inlines = (IngrediensInRecipeInline,)
     empty_value_display = '-пусто-'
 
     @display(description='Количество в избранных')

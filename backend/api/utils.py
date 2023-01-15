@@ -1,9 +1,8 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import status
-from rest_framework.response import Response
-
 from recipes.models import (IngredientInRecipe, Ingredients, Recipes,
                             Subscriptions)
+from rest_framework import status
+from rest_framework.response import Response
 
 
 def add_del_recipesview(request, model, recipeminifiedserializer, **kwargs):
@@ -65,7 +64,7 @@ def boolean_serializers_item(self, model, obj):
     Подписан ли текущий пользователь на запрашимаего пользователя.
 
     2. RecipesSerializer - get_is_favorited:
-   Показывает, находится ли рецепт в списке избранных.
+    Показывает, находится ли рецепт в списке избранных.
 
     3. RecipesSerializer - get_is_shopping_cart:
     Показывает, находится ли рецепт в списке покупок.
@@ -103,15 +102,14 @@ def create_update_recipes(validated_data, author=None, instance=None):
 
     recipe.tags.set(tags)
 
-    for ingredient in ingredients:
-        amount = ingredient.get('amount')
-        current_ingredient = Ingredients.objects.get(
-            id=ingredient.get('id')
-        )
-        IngredientInRecipe.objects.create(
+    IngredientInRecipe.objects.bulk_create([
+        IngredientInRecipe(
             recipe=recipe,
-            ingredient=current_ingredient,
-            amount=amount
-        )
+            amount=ingredient.get('amount'),
+            ingredient=Ingredients.objects.get(
+                id=ingredient.get('id')
+            ),
+        ) for ingredient in ingredients
+    ])
 
     return recipe

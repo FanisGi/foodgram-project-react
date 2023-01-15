@@ -47,3 +47,5 @@ uritemplate==4.1.1
 urllib3==1.26.13
 webcolors==1.12
 zipp==3.11.0
+gunicorn==20.0.4
+psycopg2-binary==2.8.6

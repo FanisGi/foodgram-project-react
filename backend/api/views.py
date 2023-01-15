@@ -4,13 +4,12 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
+from recipes.models import (Favorite, IngredientInRecipe, Ingredients, Recipes,
+                            Shoppingcart, Subscriptions, Tags)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from recipes.models import (Favorite, IngredientInRecipe, Ingredients, Recipes,
-                            Shoppingcart, Subscriptions, Tags)
 
 from .filters import IngredientsFilter, RecipesFilter
 from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
@@ -30,12 +29,11 @@ class CustomUsersViewSet(UserViewSet):
 
     @action(
         detail=True,
-        methods=['POST', 'DELETE'],
+        methods=['POST'],
         permission_classes=(IsAuthenticated,)
     )
     def subscribe(self, request, **kwargs):
-        """Подписаться или отписать на пользователя."""
-
+        """Подписаться на пользователя."""
         user = request.user
         author_id = kwargs['id']
         author_obj = get_object_or_404(User, id=author_id)
@@ -55,23 +53,25 @@ class CustomUsersViewSet(UserViewSet):
                     serializer.data, status=status.HTTP_200_OK
                 )
 
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if request.method == 'DELETE':
-            get_object_or_404(
-                Subscriptions,
-                user=user,
-                author_id=author_id
-            ).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
         return Response(
             serializer.errors,
             status=status.HTTP_400_BAD_REQUEST
         )
+
+    @subscribe.mapping.delete
+    def delete_subscribe(self, request, **kwargs):
+        """Отписать на пользователя."""
+        user = request.user
+        author_id = kwargs['id']
+
+        if get_object_or_404(
+            Subscriptions,
+            user=user,
+            author_id=author_id
+        ).delete():
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         detail=False,
