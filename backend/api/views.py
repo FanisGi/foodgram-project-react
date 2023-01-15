@@ -24,6 +24,7 @@ User = get_user_model()
 
 
 class CustomUsersViewSet(UserViewSet):
+    """Вьюсет для обработки всех запросов от пользователей."""
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
 
@@ -38,13 +39,14 @@ class CustomUsersViewSet(UserViewSet):
         user = request.user
         author_id = kwargs['id']
         author_obj = get_object_or_404(User, id=author_id)
-        
+
         if request.method == 'POST':
             serializer = SubscriptionsSerializer(
                 instance=author_obj,
                 data=request.data,
                 context={'request': request}
             )
+
             if serializer.is_valid():
                 Subscriptions.objects.create(
                     user=user, author_id=author_id
@@ -52,12 +54,12 @@ class CustomUsersViewSet(UserViewSet):
                 return Response(
                     serializer.data, status=status.HTTP_200_OK
                 )
-            else:
-                return Response(
-                    serializer.errors,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-        
+
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         if request.method == 'DELETE':
             get_object_or_404(
                 Subscriptions,
@@ -66,14 +68,19 @@ class CustomUsersViewSet(UserViewSet):
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     @action(
         detail=False,
         permission_classes=(IsAuthenticated,)
     )
     def subscriptions(self, request):
         """
-        Возвращает пользователей, 
-        на которых подписан текущий пользователь. 
+        Возвращает пользователей,
+        на которых подписан текущий пользователь.
         В выдачу добавляются рецепты.
         """
         subscriptions_data = User.objects.filter(
@@ -112,12 +119,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         """
-        Возвращает нужный сериализатор при разных операциях: 
-        GET, DELETE - RecipesSerializer; 
+        Возвращает нужный сериализатор при разных операциях:
+        GET, DELETE - RecipesSerializer;
         POST, UPDATE, DELETE - RecipesAddSerializer.
         """
         if self.action in ('create', 'partial_update'):
-            return RecipesAddSerializer 
+            return RecipesAddSerializer
         return RecipesSerializer
 
     @action(
@@ -149,7 +156,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         """Скачать файл со списком покупок. Формат TXT."""
         shopping_cart = IngredientInRecipe.objects.filter(
-            recipe__shoppingcart_recipe__user = request.user,
+            recipe__shoppingcart_recipe__user=request.user,
         ).order_by('ingredient__name').values_list(
             'ingredient__name',
             'ingredient__measurement_unit'

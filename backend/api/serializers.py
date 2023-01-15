@@ -20,7 +20,8 @@ class CustomUserSerializer(UserSerializer):
     class Meta:
         model = User
         fields = (
-            'email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed'
+            'email', 'id', 'username', 'first_name',
+            'last_name', 'is_subscribed'
         )
 
     def get_is_subscribed(self, obj):
@@ -45,9 +46,9 @@ class IngredientsSerializer(serializers.ModelSerializer):
 
 
 class IngredientsInRecipesSerializers(serializers.ModelSerializer):
-    """Сериализатор для связки рецепт-игредиент-количество.""" 
+    """Сериализатор для связки рецепт-игредиент-количество."""
     id = serializers.IntegerField()
-    
+
     class Meta:
         model = IngredientInRecipe
         fields = ('id', 'amount',)
@@ -79,10 +80,10 @@ class RecipesSerializer(RecipeMinifiedSerializer):
     class Meta(RecipeMinifiedSerializer.Meta):
         model = Recipes
         fields = (
-            'id', 'tags', 'author', 'ingredients', 
+            'id', 'tags', 'author', 'ingredients',
             'is_favorited', 'is_in_shopping_cart', 'text',
         ) + RecipeMinifiedSerializer.Meta.fields
-    
+
     def get_ingredients(self, obj):
         """Игредиенты рецепта с требуемым количеством."""
         return obj.ingredients.values(
@@ -93,11 +94,11 @@ class RecipesSerializer(RecipeMinifiedSerializer):
     def get_is_favorited(self, obj):
         """Показывает, находится ли рецепт в списке избранных."""
         return boolean_serializers_item(self, Favorite, obj)
-    
+
     def get_is_in_shopping_cart(self, obj):
         """Показывает, находится ли рецепт в списке покупок."""
         return boolean_serializers_item(self, Shoppingcart, obj)
-        
+
 
 class RecipesAddSerializer(serializers.ModelSerializer):
     """Сериализатор для создания и редактирования рецептов."""
@@ -113,7 +114,7 @@ class RecipesAddSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipes
         fields = (
-            'id', 'tags', 'author', 'ingredients', 
+            'id', 'tags', 'author', 'ingredients',
             'image', 'name', 'text', 'cooking_time',
         )
 
@@ -132,7 +133,7 @@ class RecipesAddSerializer(serializers.ModelSerializer):
             )
 
         return data
-    
+
     def validate_tags(self, data):
         """Проверка на выбор Tags. Min_value = 1."""
         tags = self.initial_data.get('tags')
@@ -174,10 +175,8 @@ class RecipesAddSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Создание нового рецепта."""
         author = self.context.get('request').user
-        recipe = create_update_recipes(validated_data, author=author)
+        return create_update_recipes(validated_data, author=author)
 
-        return recipe
-    
     def update(self, instance, validated_data):
         """Обновление рецепта."""
         instance.name = validated_data.get('name', instance.name)
@@ -244,12 +243,12 @@ class SubscriptionsSerializer(CustomUserSerializer):
             author=obj.id
         )
         serializer = RecipeMinifiedSerializer(
-            data=recipes_data[:int(limit)], 
+            data=recipes_data[:int(limit)],
             many=True
         )
         serializer.is_valid()
         return serializer.data
-    
+
     def get_recipes_count(self, obj):
         """Количество рецептов у избранного автора."""
         return obj.recipes.count()

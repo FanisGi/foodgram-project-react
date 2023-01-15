@@ -6,10 +6,10 @@ from recipes.models import (IngredientInRecipe, Ingredients, Recipes,
                             Subscriptions)
 
 
-def add_del_recipesview(request, model, RecipeMinifiedSerializer, **kwargs):
+def add_del_recipesview(request, model, recipeminifiedserializer, **kwargs):
     """
     Утилита для view функции recipes. Применяется для:
-    Добавить или удалить рецепт в избранных у пользователя. 
+    Добавить или удалить рецепт в избранных у пользователя.
     Добавить или удалить рецепт из списка покупок.
     """
     recipe_id = kwargs['pk']
@@ -23,11 +23,12 @@ def add_del_recipesview(request, model, RecipeMinifiedSerializer, **kwargs):
     }
 
     if request.method == 'POST':
-        serializer = RecipeMinifiedSerializer(
+        serializer = recipeminifiedserializer(
             instance=data,
             data=request.data,
             context={'request': request}
         )
+
         if serializer.is_valid():
             model.objects.create(
                 user=user, recipe_id=recipe_id
@@ -35,11 +36,11 @@ def add_del_recipesview(request, model, RecipeMinifiedSerializer, **kwargs):
             return Response(
                 serializer.data, status=status.HTTP_200_OK
             )
-        else:
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
-            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     if request.method == 'DELETE':
         get_object_or_404(
@@ -49,12 +50,18 @@ def add_del_recipesview(request, model, RecipeMinifiedSerializer, **kwargs):
         ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    return Response(
+        serializer.errors,
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+
 def boolean_serializers_item(self, model, obj):
 
     """
     Утилита для получения булевой переменной в сериализаторах:
 
-    1. CustomUserSerializer - get_is_subscribed: 
+    1. CustomUserSerializer - get_is_subscribed:
     Подписан ли текущий пользователь на запрашимаего пользователя.
 
     2. RecipesSerializer - get_is_favorited:
@@ -64,25 +71,25 @@ def boolean_serializers_item(self, model, obj):
     Показывает, находится ли рецепт в списке покупок.
     """
     user = self.context.get('request').user
-    
+
     if user.is_anonymous:
         return False
 
-    elif model == Subscriptions:
+    if model == Subscriptions:
         if model.objects.filter(
             author_id=obj.id,
             user=user
         ).exists():
             return True
         return False
-    
-    else:
-        if model.objects.filter(
-            recipe_id=obj.id,
-            user=user
-        ).exists():
-            return True
-        return False
+
+    if model.objects.filter(
+        recipe_id=obj.id,
+        user=user
+    ).exists():
+        return True
+    return False
+
 
 def create_update_recipes(validated_data, author=None, instance=None):
     """Утилита для RecipesSerializer для методов create, update."""
@@ -93,13 +100,13 @@ def create_update_recipes(validated_data, author=None, instance=None):
         recipe = Recipes.objects.create(author=author, **validated_data)
     else:
         recipe = instance
-    
+
     recipe.tags.set(tags)
 
     for ingredient in ingredients:
         amount = ingredient.get('amount')
         current_ingredient = Ingredients.objects.get(
-            id = ingredient.get('id')
+            id=ingredient.get('id')
         )
         IngredientInRecipe.objects.create(
             recipe=recipe,

@@ -35,8 +35,10 @@ class Tags(models.Model):
         validators=[
             RegexValidator(
                 regex='^[-a-zA-Z0-9_]+$',
-                message=(f'slug введен неверно. Может состоять из латинских '
-                f'букв, цифр и спецсимвола _')
+                message=(
+                    'slug введен неверно. Может состоять из латинских'
+                    ' букв, цифр и спецсимвола _'
+                )
             )
         ]
     )
@@ -86,13 +88,11 @@ class Recipes(models.Model):
         on_delete=models.CASCADE,
     )
     image = models.ImageField(
-        upload_to='recipes/images/', 
+        upload_to='recipes/images/',
     )
     tags = models.ManyToManyField(
         Tags,
         verbose_name='Список тегов',
-        # related_name='recipes',
-        # on_delete=models.CASCADE,
     )
     ingredients = models.ManyToManyField(
         Ingredients,
@@ -184,7 +184,7 @@ class Favorite(models.Model):
 
 class Subscriptions(models.Model):
     """Модель с подписками на авторов."""
-    
+
     user = models.ForeignKey(
         Users,
         on_delete=models.CASCADE,
