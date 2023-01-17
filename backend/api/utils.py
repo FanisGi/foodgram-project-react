@@ -36,11 +36,6 @@ def add_del_recipesview(request, model, recipeminifiedserializer, **kwargs):
                 serializer.data, status=status.HTTP_200_OK
             )
 
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
     if request.method == 'DELETE':
         get_object_or_404(
             model,
