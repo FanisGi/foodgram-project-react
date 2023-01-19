@@ -1,11 +1,9 @@
-version: '3.4'
+version: '3.3'
 
 services:
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: fanisgi/foodgram_frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
 
@@ -17,13 +15,11 @@ services:
       - ./.env
 
   backend:
-    build: ../backend .
+    image: fanisgi/foodgram_frontend:latest
     restart: always
     volumes:
       - static_value:/app/static/
       - media_value:/app/media/
-    # ports:
-    #  - "8000:8000"
     depends_on:
       - db
     env_file:
@@ -43,6 +39,6 @@ services:
       - backend
 
 volumes:
-  postgresql_data: {}
+  postgresql_data:
   static_value:
   media_value:
