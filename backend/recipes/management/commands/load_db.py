@@ -8,13 +8,12 @@ from recipes.models import Ingredients
 
 ingredients_file = os.path.join(
     settings.BASE_DIR,
-    '../data/ingredients.csv'
+    './data/ingredients.csv'
 )
 
 
 class Command(BaseCommand):
-    """Загрузка БД из готовых *.csv файлов."""
-    # Подсказка когда пользователь пишет help.
+    """Загрузка базы из готовых *.csv файлов."""
     help = "Загрузка данных в базу данных из файлов *.csv"
 
     def add_arguments(self, parser):
@@ -30,11 +29,13 @@ class Command(BaseCommand):
         )
 
     def import_ingredients(self):
-        # Если данные не пустые повторно не загружаем.
+        """Получение и сохранение данных из определенных файлов."""
+
         if Ingredients.objects.exists():
-            print('Данные в category уже загружены. Аварийное завершение.')
+            print('Данные в ingredients уже загружены. Аварийное завершение.')
         else:
             print('Загрузка данных в ingredients.')
+
             for row in DictReader(
                 open(
                     ingredients_file,
@@ -46,10 +47,14 @@ class Command(BaseCommand):
                     measurement_unit=row['measurement_unit'],
                 )
                 ingredients.save()
+
             print('Загрузка данных в ingredients завершена.')
 
     def handle(self, **options):
+        """Команда для выбора базы для загрузки."""
+
         if options['ingredients']:
             self.import_ingredients()
+
         if options['import_all']:
             self.import_ingredients()
