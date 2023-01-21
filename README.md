@@ -52,6 +52,9 @@ python -m venv venv && . venv/Scripts/activate
 `python manage.py runserver`
 
 ### на удаленном сервере
+
+sudo docker-compose exec -T backend python manage.py load_db --ingredients
+
 Установите на сервере docker и docker-compose
 
 Скопируйте на сервер docker-compose.yaml и nginx/default.conf
