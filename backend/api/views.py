@@ -39,20 +39,19 @@ class CustomUsersViewSet(UserViewSet):
         author_id = kwargs['id']
         author_obj = get_object_or_404(User, id=author_id)
 
-        if request.method == 'POST':
-            serializer = SubscriptionsSerializer(
-                instance=author_obj,
-                data=request.data,
-                context={'request': request}
-            )
+        serializer = SubscriptionsSerializer(
+            instance=author_obj,
+            data=request.data,
+            context={'request': request}
+        )
 
-            if serializer.is_valid():
-                Subscriptions.objects.create(
-                    user=user, author_id=author_id
-                )
-                return Response(
-                    serializer.data, status=status.HTTP_200_OK
-                )
+        if serializer.is_valid():
+            Subscriptions.objects.create(
+                user=user, author_id=author_id
+            )
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED
+            )
 
         return Response(
             serializer.errors,

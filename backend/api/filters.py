@@ -33,10 +33,13 @@ class RecipesFilter(filters.FilterSet):
     is_in_shopping_cart = filters.BooleanFilter(
         method='filter_is_in_shopping_cart'
     )
+    is_subscribed = filters.BooleanFilter(
+        method='filter_is_subscribed'
+    )
 
     class Meta:
         model = Recipes
-        fields = ('tags',)
+        fields = ('tags', 'author',)
 
     def filter_is_favorited(self, queryset, name, value):
         user = self.request.user
@@ -44,7 +47,7 @@ class RecipesFilter(filters.FilterSet):
         if Favorite.objects.filter(user=user).exists():
             return queryset.filter(favorite_recipe__user=user)
 
-        return queryset
+        return queryset.none()
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
@@ -52,4 +55,8 @@ class RecipesFilter(filters.FilterSet):
         if Shoppingcart.objects.filter(user=user).exists():
             return queryset.filter(shoppingcart_recipe__user=user)
 
-        return queryset
+        return queryset.none()
+    
+    def filter_is_subscribed(self, queryset, name, value):
+        user = self.request.user
+        return queryset.filter(author=user)

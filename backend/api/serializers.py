@@ -242,10 +242,13 @@ class SubscriptionsSerializer(CustomUserSerializer):
         recipes_data = Recipes.objects.filter(
             author=obj.id
         )
+        if limit:
+            recipes_data = recipes_data[:int(limit)]
+
         serializer = RecipeMinifiedSerializer(
-            data=recipes_data[:int(limit)],
-            many=True
-        )
+                data=recipes_data,
+                many=True
+            )
         serializer.is_valid()
         return serializer.data
 
