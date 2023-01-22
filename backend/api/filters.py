@@ -56,7 +56,7 @@ class RecipesFilter(filters.FilterSet):
             return queryset.filter(shoppingcart_recipe__user=user)
 
         return queryset.none()
-    
+
     def filter_is_subscribed(self, queryset, name, value):
         user = self.request.user
         return queryset.filter(author=user)
