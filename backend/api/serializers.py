@@ -118,22 +118,6 @@ class RecipesAddSerializer(serializers.ModelSerializer):
             'image', 'name', 'text', 'cooking_time',
         )
 
-    def validate_name(self, data):
-        """Проверка на повторение рецептов одним автором."""
-        author = self.context.get('request').user
-        name_recipe = self.initial_data.get('name')
-
-        if Recipes.objects.filter(
-            author=author,
-            name=name_recipe
-        ).exists():
-            raise serializers.ValidationError(
-                f'У Вас уже есть рецепт с именем {name_recipe}. '
-                'Проверьте свой рецепт.'
-            )
-
-        return data
-
     def validate_tags(self, data):
         """Проверка на выбор Tags. Min_value = 1."""
         tags = self.initial_data.get('tags')
@@ -175,6 +159,17 @@ class RecipesAddSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Создание нового рецепта."""
         author = self.context.get('request').user
+        name_recipe = self.validated_data.get('name')
+
+        if Recipes.objects.filter(
+            author=author,
+            name=name_recipe
+        ).exists():
+            raise serializers.ValidationError(
+                f'У Вас уже есть рецепт с именем {name_recipe}. '
+                'Проверьте свой рецепт.'
+            )
+
         return create_update_recipes(validated_data, author=author)
 
     def update(self, instance, validated_data):
