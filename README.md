@@ -157,7 +157,7 @@ docker-compose exec -T backend python manage.py createsuperuser
 
 8. Сервис будет доступен по **http://localhost/**.
 
-### Установке на удаленном сервере
+### на удаленном сервере
 
 1. Cклонируйте репозитарий и создайте копию проекта в своём профиле **github**:
 
